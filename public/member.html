@@ -1,0 +1,16 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Member Area</title>
+<style>body{font:16px Arial;background:#09090f;color:white;max-width:800px;margin:auto;padding:30px}.card{background:#181821;padding:22px;border-radius:18px;margin:18px 0}.gold{color:#ffd43b}textarea{width:100%;height:100px;background:#111;color:white;border:1px solid #444;border-radius:8px;padding:10px}button{padding:10px 16px;background:#ffd43b;border:0;border-radius:8px;font-weight:bold;cursor:pointer}</style>
+</head><body><h1>🔥 Member Area</h1><p><a href="/" style="color:#aaa">← Kembali</a> | <button onclick="logout()">Logout</button></p><div id="box"></div>
+<script>
+const id=localStorage.getItem("tikiMemberId");
+function esc(x){return String(x).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+async function load(){
+ if(!id){box.innerHTML="<div class='card'><p>Belum login. Silakan login di halaman utama.</p></div>";return}
+ const r=await fetch("/.netlify/functions/api",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"member",memberId:id})});
+ const x=await r.json();if(x.error){box.innerHTML="<p>"+esc(x.error)+"</p>";return}
+ const m=x.member;
+ box.innerHTML=`<div class="card"><h2>${esc(m.name)}</h2><p>@${esc(m.username)}</p><h2 class="gold">${esc(m.level)}</h2></div>`+
+ (m.quests.length?m.quests.map(q=>`<div class="card"><h2>🎯 ${esc(q.title)}</h2><p>${esc(q.description)}</p><p>Status: <b>${esc(q.status)}</b></p>${q.status==="approved"?"<p>✅ Quest approved!</p>":`<textarea id="p${q.id}" placeholder="Masukkan bukti quest"></textarea><br><button onclick="proof('${q.id}')">SUBMIT PROOF</button>${q.reviewNote?`<p>Catatan host: ${esc(q.reviewNote)}</p>`:""}`}</div>`).join(""):"<div class='card'><h2>🎯 Belum ada quest</h2><p>Tunggu quest dari host.</p></div>") }
+async function proof(q){const v=document.getElementById("p"+q).value;if(!v.trim())return alert("Masukkan bukti dulu.");await fetch("/.netlify/functions/api",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"proof",memberId:id,questId:q,proof:v})});load()}
+function logout(){localStorage.removeItem("tikiMemberId");location.href="/"} load();
+</script></body></html>

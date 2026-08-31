@@ -1,0 +1,20 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Host Admin</title>
+<style>body{font:16px Arial;background:#09090f;color:white;max-width:1050px;margin:auto;padding:25px}.box{background:#181821;padding:22px;border-radius:18px;margin:18px 0}input,textarea,select{width:100%;padding:11px;margin:7px 0 14px;background:#111;color:white;border:1px solid #444;border-radius:8px}button{padding:10px 16px;background:#ffd43b;border:0;border-radius:8px;font-weight:bold;cursor:pointer}.danger{background:#f04747;color:#fff}.member{border:1px solid #333;padding:15px;border-radius:12px;margin:12px 0}.q{background:#101018;padding:12px;border-radius:10px;margin-top:10px}</style>
+</head><body><h1>👑 Host Dashboard</h1>
+<div id="loginBox" class="box"><p>Richard Harris Phang • Jason Vilbert • Kenward Alvaro Viryatandi</p><input id="pw" type="password" placeholder="Password host"><button onclick="login()">LOGIN</button><p id="lm"></p></div>
+<div id="app" style="display:none"><div class="box"><h2>👥 Members</h2><h1 id="total">0</h1><div id="members"></div></div>
+<div class="box"><h2>✏️ Edit Website</h2><input id="st"><textarea id="si"></textarea><textarea id="sb" placeholder="Satu keuntungan per baris"></textarea><button onclick="save()">SAVE WEBSITE</button><p id="sm"></p></div>
+<div class="box"><h2>🎯 Berikan Quest ke Member</h2><select id="sel"></select><input id="qt" placeholder="Judul quest"><textarea id="qd" placeholder="Deskripsi quest"></textarea><button onclick="quest()">ASSIGN QUEST</button><p id="qm"></p></div></div>
+<script>
+let password="",data;
+async function api(action,o={}){const r=await fetch("/.netlify/functions/api",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,...o})});return r.json()}
+function esc(x){return String(x).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+async function login(){password=pw.value;data=await api("admin",{password});if(data.ok){loginBox.style.display="none";app.style.display="block";render()}else lm.textContent=data.error}
+function render(){total.textContent=data.members.length;st.value=data.site.title;si.value=data.site.intro;sb.value=data.site.benefits.join("\n");sel.innerHTML=data.members.map(m=>`<option value="${m.id}">${esc(m.username)} — ${esc(m.name)}</option>`).join("");members.innerHTML=data.members.map(m=>`<div class="member"><b>@${esc(m.username)}</b> — ${esc(m.name)}<br>Kasta: <b>${esc(m.level)}</b><br>Quest: ${m.quests.length}<br><button onclick="promote('${m.id}')">UBAH KASTA</button> <button class="danger" onclick="removeM('${m.id}')">REMOVE</button>${m.quests.map(q=>`<div class="q">🎯 <b>${esc(q.title)}</b><br>Status: ${esc(q.status)}<br>${q.proof?"Proof: "+esc(q.proof):"Belum ada proof"}${q.status==="pending"?`<br><button onclick="review('${m.id}','${q.id}',true)">APPROVE</button> <button class="danger" onclick="review('${m.id}','${q.id}',false)">REJECT</button>`:""}</div>`).join("")}</div>`).join("")}
+async function refresh(){data=await api("admin",{password});render()}
+async function save(){const r=await api("admin-save",{password,title:st.value,intro:si.value,benefits:sb.value.split("\n").filter(Boolean)});sm.textContent=r.error||"Website berhasil diperbarui";refresh()}
+async function quest(){const r=await api("quest",{password,memberId:sel.value,title:qt.value,description:qd.value});qm.textContent=r.error||"Quest diberikan";qt.value="";qd.value="";refresh()}
+async function review(memberId,questId,approved){let note=approved?"":(prompt("Alasan penolakan:")||"");await api("review",{password,memberId,questId,approved,note});refresh()}
+async function promote(memberId){const level=prompt("Masukkan kasta: Member / Fans / Tiki / Tiki - Tiki / Tiki Elite / Tiki Master / Tiki Legend");if(level)await api("promote",{password,memberId,level});refresh()}
+async function removeM(memberId){if(confirm("Keluarkan member ini?"))await api("remove",{password,memberId});refresh()}
+</script></body></html>

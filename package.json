@@ -1,0 +1,8 @@
+{
+  "name": "tiki-tiki-gank",
+  "private": true,
+  "version": "4.0.0",
+  "dependencies": {
+    "@netlify/blobs": "^9.1.0"
+  }
+}
